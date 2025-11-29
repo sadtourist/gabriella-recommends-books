@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gabriella’s Book Shelves</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Inter font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    :root {
+      --bg: #E1C5A0;
+      --text-main: #383232;
+      --accent: #265D7B;
+      --popup-bg: #E9E0D4;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+    }
+
+    .app {
+      padding: 1.5rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    header.intro {
+      text-align: center;
+      margin-bottom: 1.8rem;
+    }
+
+    h1 {
+      margin: 0 0 0.4rem;
+      font-size: 1.7rem;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+    }
+
+    .subtitle {
+      margin: 0;
+      font-size: 0.95rem;
+      color: var(--accent);
+    }
+
+    /* Collage-style grid: 3x4 on large screens */
+
+    .vibe-grid {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 1.1rem;
+      justify-content: center;
+    }
+
+    @media (min-width: 900px) {
+      .vibe-grid {
+        grid-template-columns: repeat(4, minmax(130px, 1fr));
+      }
+    }
+
+    .card-button {
+      padding: 0;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      display: block;
+      max-width: 170px;
+      margin: 0 auto;
+    }
+
+    .card-image {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 0;
+      transform-origin: center;
+      transition: transform 0.15s ease-out;
+    }
+
+    /* Slight collage tilts */
+    .card-button:nth-child(3n+1) .card-image {
+      transform: rotate(-2deg);
+    }
+    .card-button:nth-child(3n+2) .card-image {
+      transform: rotate(1.5deg);
+    }
+    .card-button:nth-child(3n) .card-image {
+      transform: rotate(-1deg);
+    }
+
+    .card-button:hover .card-image {
+      transform: translateY(-4px) scale(1.02);
+    }
+
+    /* RESULT + ABOUT OVERLAYS */
+
+    .overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.15);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      z-index: 20;
+    }
+
+    .overlay-backdrop.is-visible {
+      display: flex;
+    }
+
+    .overlay-inner {
+      position: relative;
+      background: var(--popup-bg);
+      border-radius: 18px;
+      padding: 1.6rem 1.8rem 1.4rem;
+      max-width: 460px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .overlay-label {
+      font-size: 0.9rem;
+      letter-spacing: 0.05em;
+      text-transform: none; /* keep as written: Gabriella recommends: */
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 0.85rem;
+      right: 1rem;
+      border: none;
+      background: transparent;
+      font-size: 1.1rem;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--text-main);
+      padding: 0;
+    }
+
+    .book-icon {
+      width: 60px;
+      height: auto;
+      margin-bottom: 0.8rem;
+    }
+
+    .book-title {
+      margin: 0 0 0.25rem;
+      font-size: 1.3rem;  /* bigger */
+      font-weight: 600;
+    }
+
+    .book-author {
+      margin: 0 0 0.75rem;
+      font-size: 0.98rem; /* bigger */
+      color: #6b5f55;
+    }
+
+    .book-comment {
+      margin: 0 0 1.1rem;
+      font-size: 0.93rem;
+      line-height: 1.45;
+    }
+
+    .actions-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn {
+      font-family: inherit;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      text-transform: none;
+      border-radius: 999px;
+      padding: 0.4rem 1.1rem;
+      cursor: pointer;
+      border: 1px solid var(--text-main);
+      background: #E1C5A0;
+      color: var(--text-main);
+    }
+
+    .action-btn.secondary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--popup-bg);
+    }
+
+    .about-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--text-main);
+      text-align: left;
+    }
+
+    .about-text p {
+      margin: 0 0 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <header class="intro">
+      <h1>What are you in the mood to read?</h1>
+      <p class="subtitle">
+        Choose a book that matches your reading mood, and you'll get a recommendation from Gabriella's library.
+      </p>
+    </header>
+
+    <section class="vibe-grid" id="vibeGrid"></section>
+
+    <!-- RESULT OVERLAY -->
+    <section class="overlay-backdrop" id="resultOverlay" aria-hidden="true">
+      <div class="overlay-inner">
+        <button type="button" class="close-btn" id="resultCloseX" aria-label="Close">
+          ×
+        </button>
+        <div class="overlay-label">Gabriella recommends:</div>
+
+        <img src="designs/placeholder.png" alt="" class="book-icon" />
+
+        <h2 class="book-title" id="bookTitle"></h2>
+        <p class="book-author" id="bookAuthor"></p>
+        <p class="book-comment" id="bookComment"></p>
+
+        <div class="actions-row">
+          <button type="button" class="action-btn" id="againBtn">
+            try another book in this category
+          </button>
+          <button type="button" class="action-btn secondary" id="backBtn">
+            pick another vibe
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT OVERLAY -->
+    <section class="overlay-backdrop" id="aboutOverlay" aria-hidden="true">
+      <div class="overlay-inner">
+        <button type="button" class="close-btn" id="aboutCloseX" aria-label="Close">
+          ×
+        </button>
+        <div class="overlay-label">about these shelves</div>
+        <div class="about-text" id="aboutText">
+          <p>
+            This is a tiny, very biased book shelf. Each book on the main page is a mood
+            or micro-genre I gravitate towards or have enjoyed, and every recommendation
+            comes from books I’ve actually read.
+          </p>
+          <p>
+            It’s not an exhaustive list or a ranking, just a way to match your mood to
+            something that might stay with you for a while.
+          </p>
+          <p>
+            This page is run by Gabriella, for family and friends—and for any strangers
+            who ask me for book recommendations.
+          </p>
+        </div>
+        <div class="actions-row" style="margin-top: 1rem;">
+          <button type="button" class="action-btn secondary" id="aboutCloseBtn">
+            pick another vibe
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // --- CONFIG ---
+
+    const vibes = {
+      isThisADream: {
+        label: "Is this a dream?",
+        subtitle: "Labyrinths & surreal worlds",
+        cardImage: "is-this-a-dream.png",
+        books: [
+          {
+            title: "Piranesi",
+            author: "Susanna Clarke",
+            comment: `A quiet marvel that has stayed with me. A man wanders an endless marble labyrinth filled with statues and tides, uncovering truths about memory, isolation, and faith with no memory of how he got there. Poetic, academic, a dream disguised as a mystery.`
+          },
+          {
+            title: "Our Wives Under the Sea",
+            author: "Julia Armfield",
+            comment: `Two women in love. One returns from a doomed deep-sea mission, changed forever. The other: questioning what is happening to her wife. Grief meets cosmic horror. What’s real, and what’s a metaphor? That’s for you to decide.`
+          },
+          {
+            title: "Nightbitch",
+            author: "Rachel Yoder",
+            comment: `A mother may or may not be turning into a dog, and it’s somehow both hilarious and… disgusting… and freeing? Feminine rage, body horror, and absurd motherhood all rolled together in one.`
+          },
+          {
+            title: "The Ocean at the End of the Lane",
+            author: "Neil Gaiman",
+            comment: `A man’s childhood memories bleed into myth. I usually don’t care to read books with children as the main characters, but this one made me feel like being a kid again—when magic was real and adults couldn’t be trusted.`
+          }
+        ]
+      },
+
+      gentleWreckage: {
+        label: "(Gentle) Emotional Wreckage",
+        subtitle: "Quiet devastation",
+        cardImage: "emotional-wreckage.png",
+        books: [
+          {
+            title: "The Book of M",
+            author: "Peng Shepherd",
+            comment: `People around the world suddenly start losing their shadows… and with them, their memories. A couple clings to each other at the end of the world. Strange, beautiful, and heartbreakingly human.`
+          },
+          {
+            title: "The Dog Stars",
+            author: "Peter Heller",
+            comment: `After a flu wipes out civilization (too soon?), a pilot and his dog search for connection in the quiet ruin of Colorado. Bleak, tender, and unexpectedly hopeful(!).`
+          },
+          {
+            title: "Hamnet",
+            author: "Maggie O'Farrell",
+            comment: `Shakespeare’s family life reimagined: Hamnet being Shakespeare’s son who died young (it’s not a spoiler, it happens at the beginning…). The grief is visceral, the writing is beautiful.`
+          },
+          {
+            title: "Cloud Cuckoo Land",
+            author: "Anthony Doerr",
+            comment: `Five timelines linked by one mysterious text—ideal for book lovers and fans of Cloud Atlas. A sweeping, humane meditation on how stories endure. One of my favorite books ever.`
+          },
+          {
+            title: "Flowers for Algernon",
+            author: "Daniel Keyes",
+            comment: `A man with mental disabilities takes part in a science experiment to make him a genius. It works, but… there’s a catch. P.S. Algernon is the mouse (rat?) that became a genius first.`
+          },
+          {
+            title: "Never Let Me Go",
+            author: "Kazuo Ishiguro",
+            comment: `Children at a *perfect* boarding school slowly realize what is going on behind the scenes. Gentle horror disguised as nostalgia.`
+          },
+          {
+            title: "The Sparrow",
+            author: "Mary Doria Russell",
+            comment: `Okay, so human beings discover another lifeform on a distant planet, and the first people to get their shit together and send a mission are… a bunch of Jesuit priests? Then things go wrong in every conceivable way. It’s a story about faith, trauma, and the limits of understanding.`
+          }
+        ]
+      },
+
+      womenEndWorld: {
+        label: "Women at the End of the World",
+        subtitle: "Soft & strange apocalypses",
+        cardImage: "women-at-the-end.png",
+        books: [
+          {
+            title: "I Who Have Never Known Men",
+            author: "Jacqueline Harpman",
+            comment: `A woman is raised underground from a young age, kept in a cage with only other women. Why are they there, and who put them there? Sparse, haunting, pure existential loneliness.`
+          },
+          {
+            title: "The Unworthy",
+            author: "Agustina Bazterrica",
+            comment: `Women in a brutal cult at the end of the world strive to become considered “worthy,” until a new visitor shakes things up. Disturbing, allegorical, sometimes shocking, and somehow magnetic.`
+          },
+          {
+            title: "Sea of Tranquility",
+            author: "Emily St. John Mandel",
+            comment: `Pandemics (too soon?), time travel, and an author on tour. For lovers of multiple timelines.`
+          },
+          {
+            title: "Parable of the Sower",
+            author: "Octavia E. Butler",
+            comment: `America is burning, and a teenage visionary builds a new faith from the ashes. Prophetic, practical, and terrifyingly relevant—though it was written in 1993, it might as well have been written today.`
+          },
+          {
+            title: "The Hearing Trumpet",
+            author: "Leonora Carrington",
+            comment: `Old ladies, conspiracy, and apocalypse. A surreal, feminist fever dream that starts as satire and ends in myth. Absurd in the best way.`
+          }
+        ]
+      },
+
+      sciFi101: {
+        label: "Sci-Fi 101",
+        subtitle: "Get to know the canon",
+        cardImage: "sci-fi-101.png",
+        books: [
+          {
+            title: "Foundation",
+            author: "Isaac Asimov",
+            comment: `One mathematician predicts the fall of a galactic empire and tries to hack history. First book in a whoooole series, but I only read this one. Grand ideas, better than the show.`
+          },
+          {
+            title: "Do Androids Dream of Electric Sheep?",
+            author: "Philip K. Dick",
+            comment: `A bounty hunter questions what separates humans from machines. The movie was good too, but the book really speaks to you. Bleak, weird, and deeply influential.`
+          },
+          {
+            title: "The Dispossessed",
+            author: "Ursula K. Le Guin",
+            comment: `The story opens on a utopian planet (it’s possible, apparently!), but its neighbouring planet is not so happy with them. Philosophy and politics disguised as a really good story; humane, hopeful, and deeply relevant today.`
+          },
+          {
+            title: "The Left Hand of Darkness",
+            author: "Ursula K. Le Guin",
+            comment: `An emissary for a multi-planet version of the United Nations navigates a world where gender and sex change fluidly. Political intrigue meets emotional intimacy on an icy planet.`
+          },
+          {
+            title: "Flowers for Algernon",
+            author: "Daniel Keyes",
+            comment: `A man with mental disabilities takes part in a science experiment to make him a genius. It works, but… there’s a catch. P.S. Algernon is the mouse (rat?) that became a genius first.`
+          },
+          {
+            title: "Solaris",
+            author: "Stanisław Lem",
+            comment: `Scientists orbit a sentient ocean that manifests their guilt as living people. Dense (I didn’t finish it the first time I tried) but unforgettable. Shout out to a Polish author, too.`
+          }
+        ]
+      },
+
+      worldbuilding: {
+        label: "Getting lost in another world",
+        subtitle: "AKA amazing worldbuilding",
+        cardImage: "worldbuilding.png",
+        books: [
+          {
+            title: "The Priory of the Orange Tree",
+            author: "Samantha Shannon",
+            comment: `AAAAH, it’s SO GOOD and I don’t even read a lot of fantasy. Queer dragons, rival queens, ancient myths, and an avalanche of world detail. Maximalist fantasy at its finest.`
+          },
+          {
+            title: "Pillars of the Earth",
+            author: "Ken Follett",
+            comment: `One of my favorite books of all time. A story of how people built a cathedral in medieval times, with themes of obsession, love, and cruelty orbiting the church. So addictive it feels illegal. You’re welcome in advance.`
+          },
+          {
+            title: "The Fifth Season",
+            author: "N. K. Jemisin",
+            comment: `A futuristic world powered by seismic shifts and oppression. Genius worldbuilding wrapped in raw human emotion. It’s long, but you might just read it in a day (and then the next two in the series right after).`
+          },
+          {
+            title: "Jonathan Strange & Mr Norrell",
+            author: "Susanna Clarke",
+            comment: `Think: magicians (but not the weird kind), English snark and humor, and politics. The kind of book that rewires your brain. Loved it from the first page.`
+          }
+        ]
+      },
+
+      laughingUniverse: {
+        label: "Laughing at the universe",
+        subtitle: "Ironic, clever, chaotic, funny",
+        cardImage: "laughing-at-the-universe.png",
+        books: [
+          {
+            title: "Good Omens",
+            author: "Neil Gaiman & Terry Pratchett",
+            comment: `Ok but hear me out: an angel and a demon accidentally save the world. Sharp, ridiculous, and weirdly comforting. Why am I shipping them???`
+          },
+          {
+            title: "Lamb",
+            author: "Christopher Moore",
+            comment: `The gospel & story of Jesus according to his snarky childhood best friend. Irreverent (my favourite kind of book) but surprisingly heartfelt, though it does get a bit too weird sometimes (if that’s even possible).`
+          },
+          {
+            title: "To Say Nothing of the Dog",
+            author: "Connie Willis",
+            comment: `Time-travelling historians get stuck in Victorian chaos (seriously… think: Pride & Prejudice but make it sci-fi). Smart, absurd, and incredibly charming.`
+          },
+          {
+            title: "All Systems Red",
+            author: "Martha Wells",
+            comment: `A self-loathing robot with anxiety keeps saving humans against its will. Hilarious and unexpectedly tender.`
+          },
+          {
+            title: "The Hitchhiker's Guide to the Galaxy",
+            author: "Douglas Adams",
+            comment: `Earth explodes. 42. The jokes don’t stop. Bring a towel. Enough said.`
+          }
+        ]
+      },
+
+      surprisingConcepts: {
+        label: "Surprising Concepts",
+        subtitle: "Big swings that actually work",
+        cardImage: "surprising-concepts.png",
+        books: [
+          {
+            title: "The Sparrow",
+            author: "Mary Doria Russell",
+            comment: `Okay, so human beings discover another lifeform on a distant planet, and the first people to get their shit together and send a mission are… a bunch of Jesuit priests? Then things go wrong in every conceivable way. It’s a story about faith, trauma, and the limits of understanding.`
+          },
+          {
+            title: "Civilizations",
+            author: "Laurent Binet",
+            comment: `What if the Americas colonised Europe? LET’S FIND OUT. Alternative history with dry wit, just up my alley.`
+          },
+          {
+            title: "The First Fifteen Lives of Harry August",
+            author: "Claire North",
+            comment: `A man is born, lives, and then dies. Then he is born again in the same place and time, to the same parents… with his memory intact. Gripping, emotional, and not what I expected from the beginning.`
+          },
+          {
+            title: "The Anomaly",
+            author: "Hervé Le Tellier",
+            comment: `A plane lands twice… with the same people on board, but three months apart… and humanity loses its mind. Clever and cinematic with an existential core.`
+          },
+          {
+            title: "Ministry of Time",
+            author: "Kaliane Bradley",
+            comment: `Time travel meets romance and colonial guilt. Sharp, funny, fast-paced, and stays with you.`
+          },
+          {
+            title: "Children of Time",
+            author: "Adrian Tchaikovsky",
+            comment: `In the very (very, very) distant future, humans accidentally drop a bunch of spiders on a planet with a virus that speeds up their evolution. It’s gross, brilliant, moving, and you’ll never look at a spider the same way again.`
+          },
+          {
+            title: "The Power",
+            author: "Naomi Alderman",
+            comment: `Around the world, women suddenly develop electric powers, and everything goes sideways. The roles get reversed, and no one is ready for it. A smart inversion of dystopian tropes.`
+          },
+          {
+            title: "The Book of M",
+            author: "Peng Shepherd",
+            comment: `People around the world suddenly start losing their shadows… and with them, their memories. A couple clings to each other at the end of the world. Strange, beautiful, and heartbreakingly human.`
+          }
+        ]
+      },
+
+      whimsicalOldWomen: {
+        label: "Whimsical Old Women",
+        subtitle: "Feral old ladies and their opinions",
+        cardImage: "whimsical-old-women.png",
+        books: [
+          {
+            title: "Drive Your Plow Over the Bones of the Dead",
+            author: "Olga Tokarczuk",
+            comment: `What happens when you put together astrology, murder, poetry, and stubbornness in one small Polish countryside village? This book.`
+          },
+          {
+            title: "The Hearing Trumpet",
+            author: "Leonora Carrington",
+            comment: `Old ladies, conspiracy, and apocalypse. A surreal, feminist fever dream that starts as satire and ends in myth. Absurd in the best way.`
+          }
+        ]
+      },
+
+      disagreeing: {
+        label: "Disagreeing with Gabriella",
+        subtitle: "Books I didn’t like, but you might",
+        cardImage: "disagreeing-with-gabriella.png",
+        books: [
+          {
+            title: "The Terraformers",
+            author: "Annalee Newitz",
+            comment: `Corporate utopia terraforming with a side of earnest lectures. If you prefer cutesy sci-fi where everyone ends up feeling good over actual plot depth, this one’s for you.`
+          },
+          {
+            title: "Mexican Gothic",
+            author: "Silvia Moreno-Garcia",
+            comment: `Great setting, solid idea, but somehow all vibes and not much of anything else.`
+          },
+          {
+            title: "Tender Is the Flesh",
+            author: "Agustina Bazterrica",
+            comment: `Industrial cannibalism. Clever concept, but I could barely get through the first few pages because it was written so poorly. But a lot of people say they liked it, so who knows.`
+          },
+          {
+            title: "The Memory Police",
+            author: "Yōko Ogawa",
+            comment: `A really beautiful premise—memories are erased one by one—but it was so muted, it left me cold. If you love books with vague endings where nothing happens, you’ll love this.`
+          },
+          {
+            title: "Candelaria",
+            author: "Melissa Lozada-Oliva",
+            comment: `Mythic, chaotic family novel that had an interesting premise but I was just going “wait, huh?” too much.`
+          },
+          {
+            title: "Embassytown",
+            author: "China Miéville",
+            comment: `Linguistic philosophy in space. Brilliant concept, exhausting execution. I got to 64% and stopped. I’m tired just thinking about it.`
+          },
+          {
+            title: "The Sirens of Titan",
+            author: "Kurt Vonnegut",
+            comment: `I wanted to love this book, but Vonnegut just uses the plot to share his own smug beliefs about society and it’s soooo obvious. If you love pages and pages and pages of bad dialogue back-to-back, check this one out. It’s also like 3x too long.`
+          }
+        ]
+      },
+
+      bookWasBetter: {
+        label: "The book was better",
+        subtitle: "Books adapted for screen",
+        cardImage: "book-was-better.png",
+        books: [
+          {
+            title: "Silo",
+            author: "Hugh Howey",
+            comment: `People are living in a silo underground. Why? No one knows.`
+          },
+          {
+            title: "Cloud Atlas",
+            author: "David Mitchell",
+            comment: `Six completely different linked stories across time and space that remind us how connected we all are.`
+          },
+          {
+            title: "I, Robot",
+            author: "Isaac Asimov",
+            comment: `A collection of quiet stories about morality and machines. The movie missed the point.`
+          },
+          {
+            title: "Station Eleven",
+            author: "Emily St. John Mandel",
+            comment: `This is one reaaaaally good book. Immediate post-pandemic survival turns into humans rebuilding through art and memory. Haunting, hopeful, and almost too prescient.`
+          },
+          {
+            title: "Foundation",
+            author: "Isaac Asimov",
+            comment: `One mathematician predicts the fall of a galactic empire and tries to hack history. First book in a whoooole series, but I only read this one. Grand ideas, better than the show.`
+          },
+          {
+            title: "Do Androids Dream of Electric Sheep?",
+            author: "Philip K. Dick",
+            comment: `A bounty hunter questions what separates humans from machines. The movie was good too, but the book really speaks to you. Bleak, weird, and deeply influential.`
+          },
+          {
+            title: "Solaris",
+            author: "Stanisław Lem",
+            comment: `Scientists orbit a sentient ocean that manifests their guilt as living people. Dense (I didn’t finish it the first time I tried) but unforgettable. Shout out to a Polish author, too.`
+          },
+          {
+            title: "All Systems Red",
+            author: "Martha Wells",
+            comment: `A self-loathing robot with anxiety keeps saving humans against its will. Hilarious and unexpectedly tender. 10000% better than the TV show, and so short you can finish it in a sitting.`
+          }
+        ]
+      }
+    };
+
+    const specialCards = {
+      random: {
+        key: "random",
+        label: "Random pick",
+        cardImage: "random.png"
+      },
+      about: {
+        key: "about",
+        label: "About this project",
+        cardImage: "about.png"
+      }
+    };
+
+    // --- DOM ELEMENTS ---
+
+    const vibeGridEl = document.getElementById("vibeGrid");
+
+    const resultOverlayEl = document.getElementById("resultOverlay");
+    const bookTitleEl = document.getElementById("bookTitle");
+    const bookAuthorEl = document.getElementById("bookAuthor");
+    const bookCommentEl = document.getElementById("bookComment");
+    const againBtn = document.getElementById("againBtn");
+    const backBtn = document.getElementById("backBtn");
+    const resultCloseX = document.getElementById("resultCloseX");
+
+    const aboutOverlayEl = document.getElementById("aboutOverlay");
+    const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+    const aboutCloseX = document.getElementById("aboutCloseX");
+
+    let currentVibeKey = null;
+
+    function randomFrom(array) {
+      if (!array || array.length === 0) return null;
+      const i = Math.floor(Math.random() * array.length);
+      return array[i];
+    }
+
+    function showBookForVibe(vibeKey) {
+      const vibe = vibes[vibeKey];
+      if (!vibe) return;
+
+      currentVibeKey = vibeKey;
+      const book = randomFrom(vibe.books);
+      if (!book) return;
+
+      bookTitleEl.textContent = book.title || "";
+      bookAuthorEl.textContent = book.author ? "by " + book.author : "";
+      bookCommentEl.textContent = book.comment || "";
+
+      resultOverlayEl.classList.add("is-visible");
+      resultOverlayEl.setAttribute("aria-hidden", "false");
+    }
+
+    function showRandomBook() {
+      const positiveVibes = Object.entries(vibes).filter(
+        ([key]) => key !== "disagreeing"
+      );
+      const picked = randomFrom(positiveVibes);
+      if (!picked) return;
+      const [vibeKey] = picked;
+      showBookForVibe(vibeKey);
+    }
+
+    function openAbout() {
+      aboutOverlayEl.classList.add("is-visible");
+      aboutOverlayEl.setAttribute("aria-hidden", "false");
+    }
+
+    function closeAbout() {
+      aboutOverlayEl.classList.remove("is-visible");
+      aboutOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    function closeResult() {
+      currentVibeKey = null;
+      resultOverlayEl.classList.remove("is-visible");
+      resultOverlayEl.setAttribute("aria-hidden", "true");
+    }
+
+    // Build main vibe cards
+    Object.entries(vibes).forEach(([key, vibe]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card-button";
+      btn.dataset.vibe = key;
+      btn.setAttribute(
+        "aria-label",
+        `${vibe.label}${vibe.subtitle ? " – " + vibe.subtitle : ""}`
+      );
+
+      const img = document.createElement("img");
+      img.src = "designs/" + vibe.cardImage;
+      img.alt = "";
+      img.className = "card-image";
+
+      btn.appendChild(img);
+      btn.addEventListener("click", () => showBookForVibe(key));
+
+      vibeGridEl.appendChild(btn);
+    });
+
+    // Random card
+    (function addRandomCard() {
+      const cfg = specialCards.random;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card-button";
+      btn.dataset.special = "random";
+      btn.setAttribute("aria-label", cfg.label);
+
+      const img = document.createElement("img");
+      img.src = "designs/" + cfg.cardImage;
+      img.alt = "";
+      img.className = "card-image";
+
+      btn.appendChild(img);
+      btn.addEventListener("click", showRandomBook);
+
+      vibeGridEl.appendChild(btn);
+    })();
+
+    // About card
+    (function addAboutCard() {
+      const cfg = specialCards.about;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "card-button";
+      btn.dataset.special = "about";
+      btn.setAttribute("aria-label", cfg.label);
+
+      const img = document.createElement("img");
+      img.src = "designs/" + cfg.cardImage;
+      img.alt = "";
+      img.className = "card-image";
+
+      btn.appendChild(img);
+      btn.addEventListener("click", openAbout);
+
+      vibeGridEl.appendChild(btn);
+    })();
+
+    // Buttons
+
+    againBtn.addEventListener("click", () => {
+      if (currentVibeKey) {
+        showBookForVibe(currentVibeKey);
+      } else {
+        showRandomBook();
+      }
+    });
+
+    backBtn.addEventListener("click", closeResult);
+    resultCloseX.addEventListener("click", closeResult);
+
+    aboutCloseBtn.addEventListener("click", closeAbout);
+    aboutCloseX.addEventListener("click", closeAbout);
+
+    // Close on ESC
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        if (resultOverlayEl.classList.contains("is-visible")) {
+          closeResult();
+        } else if (aboutOverlayEl.classList.contains("is-visible")) {
+          closeAbout();
+        }
+      }
+    });
+
+    // Close when clicking backdrop (outside the inner box)
+    resultOverlayEl.addEventListener("click", (event) => {
+      if (event.target === resultOverlayEl) {
+        closeResult();
+      }
+    });
+
+    aboutOverlayEl.addEventListener("click", (event) => {
+      if (event.target === aboutOverlayEl) {
+        closeAbout();
+      }
+    });
+  </script>
+</body>
+</html>
